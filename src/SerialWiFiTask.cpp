@@ -1,5 +1,6 @@
 #include "SerialWifiTask.h"
 #include <WiFi.h>
+
 WiFiServer server;
 WiFiClient client;
 
@@ -25,17 +26,24 @@ void SerialWifiTask::DoTask() {
     if (size_serial > 0) {
         if (size_serial > sizeof(BufferSerial))
             size_serial = sizeof(BufferSerial);
+        prevRecieveTime_us = currentTime_us;
         bytesRead = Serial.readBytes(BufferSerial, size_serial);
-        packetReceived = true;
-        //startTime_us = micros();
+
+        
+        TickType_t timeRecieve = (TickType_t)(size_serial * 10 * 1000000ULL / Serial.baudRate());
+        ledLeftMicros_us += timeRecieve < 10 ? 10 : timeRecieve;
     }
-    if (packetReceived && (deltaMicros >= 1000)) { //TODO неправильно записан таймаут в 32 строке
+    if (bytesRead > 0 && 
+        (currentTime_us-prevRecieveTime_us >= 1000 ||
+        bytesRead==sizeof(BufferSerial)))
+    { 
         client.write(BufferSerial, bytesRead);
-        packetReceived = false;
+        bytesRead = 0;
     }
     readWiFiToSerial(); //TODO digitalWrite
     prevCycleTime_us = currentTime_us;
     digitalWrite(LED, ledLeftMicros_us > 0);
+
 }
 //TODO разобраться с проблемой: реализация сдвига в буфере, чтобы даннные не перезаписывались поверх принятых
 //TODO добавить условие для отправки данных когда заполняется буфер
@@ -69,7 +77,7 @@ void SerialWifiTask::readWiFiToSerial() {
     {
         if (size > sizeof(BufferWifi))
             size = sizeof(BufferWifi);
-        bytesRead = client.readBytes(BufferWifi, size);
+        int bytesRead = client.readBytes(BufferWifi, size);
         //digitalWrite(5, HIGH);
         Serial.write(BufferWifi, bytesRead);
         //digitalWrite(5, LOW);     

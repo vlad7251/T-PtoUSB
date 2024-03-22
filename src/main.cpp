@@ -5,11 +5,14 @@
 #include <Wire.h>
 #include "SerialWiFiTask.h"
 #include "00_shared.h"
+#include "SaveSettings.h"
 
 const char* ssid = "HONOR 9C";  
 const char* password = "vlad7251"; 
 
 SerialWifiTask g_SerialWifiTask;
+SaveSettings saveSettingsInstance;
+
 
 void setup() {
   Serial.setTxBufferSize(1024);
@@ -19,17 +22,18 @@ void setup() {
   digitalWrite(LED, HIGH);
   delay(1000);
   digitalWrite(LED, LOW);
-  WiFi.begin(ssid, password);
+  /*WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-  }
+  }*/
+  saveSettingsInstance.begin();
   g_SerialWifiTask.Init();
   
 }
 
 void loop() {
 
-  g_SerialWifiTask.DoTask();
+  
 }
   
   

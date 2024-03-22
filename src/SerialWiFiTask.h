@@ -17,11 +17,11 @@ private:
     void readSerial();
     void readWiFiToSerial();
     TickType_t prevCycleTime_us;
+    TickType_t prevRecieveTime_us = 0;
     byte BufferWifi[1024];
     byte BufferSerial[1024];
-    bool packetReceived;
-    int bytesRead;
-    int ledLeftMicros_us;
+    int bytesRead =0;
+    int ledLeftMicros_us =0;
 };
 
 #endif  // SERIALWIFITASK_H
