@@ -15,14 +15,29 @@ public:
 
 private:
     Preferences preferences;   
-
     struct Settings {
         char staSSID[32];
         char staPassword[32];
         int baudRate;
         short transparentPort;
         short commandPort;
-    } settings;
+        bool operator==(const Settings& other) const {
+        return strcmp(staSSID, other.staSSID) == 0 &&
+               strcmp(staPassword, other.staPassword) == 0 &&
+               baudRate == other.baudRate &&
+               transparentPort == other.transparentPort &&
+               commandPort == other.commandPort;
+        }
+    };
+    Settings settings;
+
+    /*bool operator==(const Settings& lhs, const Settings& rhs) {
+        return strcmp(lhs.staSSID, rhs.staSSID) == 0 &&
+         strcmp(lhs.staPassword, rhs.staPassword) == 0 &&
+         lhs.baudRate == rhs.baudRate &&
+         lhs.transparentPort == rhs.transparentPort &&
+         lhs.commandPort == rhs.commandPort;
+    }*/
 
     
 

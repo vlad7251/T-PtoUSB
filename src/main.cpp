@@ -11,7 +11,7 @@ const char* ssid = "HONOR 9C";
 const char* password = "vlad7251"; 
 
 SerialWifiTask g_SerialWifiTask;
-SaveSettings saveSettingsInstance;
+SaveSettings g_saveSettings;
 
 
 void setup() {
@@ -26,7 +26,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
   }*/
-  saveSettingsInstance.begin();
+  g_saveSettings.begin();
   g_SerialWifiTask.Init();
   
 }

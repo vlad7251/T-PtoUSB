@@ -1,14 +1,7 @@
 #include "SaveSettings.h"
 const char *settingsKey = "TCPtoRS485";
-AsyncWebServer server(2000);
+AsyncWebServer asyncServer(2000);
 
-bool operator==(const Settings& lhs, const Settings& rhs) {
-  return strcmp(lhs.staSSID, rhs.staSSID) == 0 &&
-         strcmp(lhs.staPassword, rhs.staPassword) == 0 &&
-         lhs.baudRate == rhs.baudRate &&
-         lhs.transparentPort == rhs.transparentPort &&
-         lhs.commandPort == rhs.commandPort;
-}
 
 void SaveSettings::begin() 
 {
@@ -20,11 +13,11 @@ void SaveSettings::begin()
     }
     bool flash_connection = false;
     if (!preferences.begin(settingsKey, false)) {
-        pinMode(LED, OUTPUT);
+        /*pinMode(LED, OUTPUT);
         delay(300);
         digitalWrite(LED, HIGH);
         delay(300);
-        digitalWrite(LED, LOW);
+        digitalWrite(LED, LOW);*/
         Serial.println("Failed to open Preferences");
         flash_connection = false;
     } else {
@@ -39,10 +32,10 @@ void SaveSettings::begin()
         settings.baudRate = 115200;
         settings.transparentPort = 8080;
         settings.commandPort = 1234;
-        saveSettings();
+        preferences.putBytes(settingsKey, &settings, sizeof(Settings));
     }
-
-    WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
+    WiFi.onEvent(std::bind(&SaveSettings::WiFiGotIP, this, std::placeholders::_1, std::placeholders::_2), WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
+    //WiFi.onEvent(SaveSettings::WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
     Serial.write("Connecting to SSID: ");
     Serial.println(settings.staSSID);
 
@@ -53,15 +46,15 @@ void SaveSettings::begin()
         Serial.println("Connecting to WiFi...");
     }
 
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-        handleRoot(request);
+    asyncServer.on("/", HTTP_GET, [this](AsyncWebServerRequest *request){
+        this->handleRoot(request);
     });
 
-    server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request){
-        handleSaveSettings(request);
+    asyncServer.on("/save", HTTP_POST, [this](AsyncWebServerRequest *request){
+        this->handleSaveSettings(request);
     });
 
-    server.begin();
+    asyncServer.begin();
 }
 
 void SaveSettings::WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -149,4 +142,5 @@ void SaveSettings::handleSaveSettings(AsyncWebServerRequest *request) {
     } else {
         request->send(200, "text/plain", "Settings unchanged");
     }
+    Serial.updateBaudRate(settings.baudRate);
 }
