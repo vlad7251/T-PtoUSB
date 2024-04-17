@@ -3,15 +3,17 @@
 #include <WiFiClient.h>
 #include <WiFiServer.h>
 #include <Wire.h>
-#include "SerialWiFiTask.h"
-#include "00_shared.h"
-#include "SaveSettings.h"
+#include <SerialWiFiTask.h>
+#include <00_shared.h>
+#include <SaveSettings.h>
+#include <WebServer.h>
 
 const char* ssid = "HONOR 9C";  
 const char* password = "vlad7251"; 
 
 SerialWifiTask g_SerialWifiTask;
-SaveSettings g_saveSettings;
+
+//SaveSettings g_saveSettings;
 
 
 void setup() {
@@ -26,8 +28,10 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
   }*/
-  g_saveSettings.begin();
+  //g_saveSettings.begin();
+  g_WebServer.begin();
   g_SerialWifiTask.Init();
+
   
 }
 
