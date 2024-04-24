@@ -1,7 +1,6 @@
 #include "SaveSettings.h"
-const char *settingsKey = "TCPtoRS485";
-AsyncWebServer asyncServer(2000);
 
+const char *settingsKey = "TCPtoRS485";
 
 void SaveSettings::begin() 
 {
@@ -13,11 +12,6 @@ void SaveSettings::begin()
     }
     bool flash_connection = false;
     if (!preferences.begin(settingsKey, false)) {
-        /*pinMode(LED, OUTPUT);
-        delay(300);
-        digitalWrite(LED, HIGH);
-        delay(300);
-        digitalWrite(LED, LOW);*/
         Serial.println("Failed to open Preferences");
         flash_connection = false;
     } else {
@@ -28,119 +22,102 @@ void SaveSettings::begin()
     if (flash_connection == false || (settings.staSSID) == 0 || strlen(settings.staPassword) == 0) {
         Serial.println("Default settings used");
         strcpy(settings.staSSID, "HONOR 9C");
+        //strcpy(settings.staSSID, "TP-Link_D938");
+        saveSettings("staSSID");
         strcpy(settings.staPassword, "vlad7251");
+        //strcpy(settings.staPassword, "60067173");
+        saveSettings("staPassword");
         settings.baudRate = 115200;
+        saveSettings("baudRate");
+        Serial.updateBaudRate(settings.baudRate);
         settings.transparentPort = 8080;
+        saveSettings("transparentPort");
         settings.commandPort = 1234;
-        preferences.putBytes(settingsKey, &settings, sizeof(Settings));
-    }
-    WiFi.onEvent(std::bind(&SaveSettings::WiFiGotIP, this, std::placeholders::_1, std::placeholders::_2), WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
-    //WiFi.onEvent(SaveSettings::WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
-    Serial.write("Connecting to SSID: ");
-    Serial.println(settings.staSSID);
-
-    WiFi.begin(settings.staSSID, settings.staPassword);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(1000);
-        Serial.println("Connecting to WiFi...");
+        saveSettings("commandPort");
     }
 
-    asyncServer.on("/", HTTP_GET, [this](AsyncWebServerRequest *request){
-        this->handleRoot(request);
-    });
-
-    asyncServer.on("/save", HTTP_POST, [this](AsyncWebServerRequest *request){
-        this->handleSaveSettings(request);
-    });
-
-    asyncServer.begin();
+    
+   
 }
 
-void SaveSettings::WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
+void SaveSettings::WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) 
+{
     Serial.write(("\n" + WiFi.localIP().toString() + "\n").c_str());
 }
 
-void SaveSettings::loadSettings() {
+void SaveSettings::loadSettings() 
+{
     preferences.getBytes(settingsKey, &settings, sizeof(Settings));
 }
 
-void SaveSettings::handleRoot(AsyncWebServerRequest *request) {
-    String html = R"html(
-        <html>
-            <head>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        margin: 20px;
-                    }
-                    h1 {
-                        color: #333333;
-                    }
-                    form {
-                        width: 300px;
-                        margin: 20px 0;
-                    }
-                    label {
-                        display: block;
-                        margin-bottom: 5px;
-                    }
-                    input {
-                        width: 100%;
-                        padding: 8px;
-                        margin-bottom: 10px;
-                    }
-                    input[type="submit"] {
-                        background-color: #4CAF50;
-                        color: white;
-                        cursor: pointer;
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>WiFi Settings</h1>
-                <form action='/save' method='post'>
-                    <label for='ssid'>SSID:</label>
-                    <input type='text' name='ssid' value='" + String(settings.staSSID) + "' required><br>
-                    <label for='password'>Password:</label>
-                    <input type='password' name='password' placeholder='Enter new password' required><br>
-                    <label for='baud'>Baud Rate:</label>
-                    <input type='number' name='baud' value='" + String(settings.baudRate) + "' required><br>
-                    <label for='transPort'>Transparent Port:</label>
-                    <input type='number' name='transPort' value='" + String(settings.transparentPort) + "' required><br>
-                    <label for='commandPort'>Command Port:</label>
-                    <input type='number' name='commandPort' value='" + String(settings.commandPort) + "' required><br>
-                    <input type='submit' value='Save'>
-                </form>
-            </body>
-        </html>
-    )html";
-
-    request->send(200, "text/html", html);
+void SaveSettings::saveSettings(const char* fieldName) {
+    if (strcmp(fieldName, "staSSID") == 0) {
+        preferences.putBytes(settingsKey, &settings.staSSID, sizeof(settings.staSSID));
+    } else if (strcmp(fieldName, "staPassword") == 0) {
+        preferences.putBytes(settingsKey, &settings.staPassword, sizeof(settings.staPassword));
+    } else if (strcmp(fieldName, "baudRate") == 0) {
+        preferences.putBytes(settingsKey, &settings.baudRate, sizeof(settings.baudRate));
+    } else if (strcmp(fieldName, "transparentPort") == 0) {
+        preferences.putBytes(settingsKey, &settings.transparentPort, sizeof(settings.transparentPort));
+    } else if (strcmp(fieldName, "commandPort") == 0) {
+        preferences.putBytes(settingsKey, &settings.commandPort, sizeof(settings.commandPort));
+    }
 }
 
-void SaveSettings::handleSaveSettings(AsyncWebServerRequest *request) {
-   Settings newSettings = settings;
+// Геттеры и сеттеры для каждого поля settings
 
+const char* SaveSettings::getStaSSID() const 
+{
+    return settings.staSSID;
+}
 
-    if (request->hasParam("ssid", true))
-        strncpy(newSettings.staSSID,  request->getParam("ssid", true)->value().c_str(), sizeof(newSettings.staSSID));
-    if (request->hasParam("password", true))
-        strncpy(newSettings.staPassword,  request->getParam("password", true)->value().c_str(), sizeof(newSettings.staPassword));
-    if (request->hasParam("baud", true)) 
-        newSettings.baudRate = request->getParam("baud", true)->value().toInt();
-    if (request->hasParam("transPort", true)) 
-        newSettings.transparentPort = request->getParam("transPort", true)->value().toInt();
-    if (request->hasParam("commandPort", true))
-        newSettings.commandPort = request->getParam("commandPort", true)->value().toInt();
-    
+void SaveSettings::setStaSSID(const char* ssid)
+{
+    strncpy(settings.staSSID, ssid, sizeof(settings.staSSID));
+    saveSettings("staSSID");
+}
 
-    if (!(settings == newSettings)) {
-        settings = newSettings;
-        preferences.putBytes(settingsKey, &settings, sizeof(Settings));
-        request->send(200, "text/plain", "Settings saved");
-    } else {
-        request->send(200, "text/plain", "Settings unchanged");
-    }
+const char* SaveSettings::getStaPassword() const
+{
+    return settings.staPassword;
+}
+
+void SaveSettings::setStaPassword(const char* password)
+{
+    strncpy(settings.staPassword, password, sizeof(settings.staPassword));
+    saveSettings("staPassword");
+}
+
+int SaveSettings::getBaudRate() const
+{
+    return settings.baudRate;
+}
+
+void SaveSettings::setBaudRate(int baudRate) 
+{
+    settings.baudRate = baudRate;
     Serial.updateBaudRate(settings.baudRate);
+    saveSettings("baudRate");
+}
+
+int SaveSettings::getTransparentPort() const 
+{
+    return settings.transparentPort;
+}
+
+void SaveSettings::setTransparentPort(int transparentPort) 
+{
+    settings.transparentPort = transparentPort;
+    saveSettings("transparentPort");
+}
+
+int SaveSettings::getCommandPort() const 
+{
+    return settings.commandPort;
+}
+
+void SaveSettings::setCommandPort(int commandPort) 
+{
+    settings.commandPort = commandPort;
+    saveSettings("commandPort");
 }

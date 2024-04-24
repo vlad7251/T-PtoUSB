@@ -59,7 +59,7 @@ void SerialWifiTask::readWiFiToSerial() {
         client.stop();
         client = std::move(client2);
     }
-    static bool shown = false;
+    static bool shown = true;
     if (!client) {
         if (!shown) {
             shown = true;
