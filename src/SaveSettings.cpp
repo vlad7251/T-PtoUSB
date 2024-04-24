@@ -22,8 +22,10 @@ void SaveSettings::begin()
     if (flash_connection == false || (settings.staSSID) == 0 || strlen(settings.staPassword) == 0) {
         Serial.println("Default settings used");
         strcpy(settings.staSSID, "HONOR 9C");
+        //strcpy(settings.staSSID, "TP-Link_D938");
         saveSettings("staSSID");
         strcpy(settings.staPassword, "vlad7251");
+        //strcpy(settings.staPassword, "60067173");
         saveSettings("staPassword");
         settings.baudRate = 115200;
         saveSettings("baudRate");

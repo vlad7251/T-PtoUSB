@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <ResourceNode.hpp>
 #include <string>
+
 WebServer g_WebServer;
 /*unsigned char cert [] = {
     #include <
@@ -19,7 +20,7 @@ void WebServer::handle404Wrapper(httpsserver::HTTPRequest * request, httpsserver
     g_WebServer.handle404(request, response);
 }
 
-void WebServer::WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
+void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
  {
     Serial.write(("\n" + WiFi.localIP().toString() + "\n").c_str());
 }
@@ -31,12 +32,12 @@ void WebServer::begin()
     Serial.write("Connecting to SSID: ");
     Serial.println(saveSettings.getStaSSID());
 
+    WiFi.onEvent(&WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
     WiFi.begin(saveSettings.getStaSSID(), saveSettings.getStaPassword());
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
         Serial.println("Connecting to WiFi...");
     }
-    WiFi.onEvent(std::bind(&WebServer::WiFiGotIP, this, std::placeholders::_1, std::placeholders::_2), WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
     Serial.println("Settings loaded and WiFi connected.");
     Serial.println("Creating a new self-signed certificate.");
     Serial.println("This may take up to a minute, so be patient ;-)");
@@ -44,11 +45,12 @@ void WebServer::begin()
     cert = new httpsserver::SSLCert();
     int createCertResult = createSelfSignedCert(
         *cert,
-        KEYSIZE_2048,
+        KEYSIZE_4096,
         "CN=myesp32.local,O=FancyCompany,C=DE",
-        "20190101000000",
-        "20300101000000"
+        "20240401000000",
+        "20240701000000"
     ); 
+    Serial.write(cert->getCertData(), cert->getCertLength());
     //Моргание лампочкой после генерации
     /*pinMode(LED, OUTPUT);
     delay(1000);
@@ -144,7 +146,7 @@ void WebServer::handleRoot(httpsserver::HTTPRequest * request, httpsserver::HTTP
             </body>
         </html>
     )html";
-    
+    discardRequestBody(request);
     response->setHeader("Content-Type", "text/html");
     response->write((const uint8_t *)html.c_str(), html.length());
         //TODO промежуточная версия, дополнить записью в память, создать объект
@@ -212,4 +214,11 @@ void WebServer::discardRequestBody(httpsserver::HTTPRequest * request)
     while(!request->requestComplete()) {
         request->readBytes(buf, 16);
     }
+}
+
+//TODO удалить discardRequest
+void WebServer::loop()
+{
+    secureServer->loop();
+    delay(1);
 }

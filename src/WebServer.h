@@ -12,12 +12,12 @@ public:
     void begin();
     void handleRoot(httpsserver::HTTPRequest * request, httpsserver::HTTPResponse * response);
     void handle404(httpsserver::HTTPRequest * request, httpsserver::HTTPResponse * response);
+    void loop();
     
 
 private:
     static void handleRootWrapper(httpsserver::HTTPRequest * request, httpsserver::HTTPResponse * response);
     static void handle404Wrapper(httpsserver::HTTPRequest * request, httpsserver::HTTPResponse * response);
-    void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info);
     void discardRequestBody(httpsserver::HTTPRequest * request); 
     httpsserver::SSLCert *cert;
     httpsserver::HTTPSServer *secureServer;
